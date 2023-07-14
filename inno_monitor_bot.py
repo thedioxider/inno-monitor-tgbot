@@ -47,17 +47,19 @@ class Checker:
         if len(tdata) == 0:
             raise lxml.etree.ParseError("Couldn't access the data table")
         tdata = tdata[0]
-        self.applicants = 0
-        fdata = tdata.xpath('./tfoot/tr/td/b/text()')
-        if len(fdata) == 1:
-            self.applicants = int(fdata[0])
+        #self.applicants = 0
+        #fdata = tdata.xpath('./tfoot/tr/td/b/text()')
+        #if len(fdata) == 1:
+        #    self.applicants = int(fdata[0])
         self.position = 0
         counter = 0
+        nullers = 0
         for row in tdata.xpath('./tr'):
             counter += 1
-            if row.xpath('./td/text()')[0] == self.uid:
+            d = row.xpath('./td/text()')
+            if d[0] == self.uid:
                 self.position = counter
-
-
-p = Checker('136568', program=0, noege=1)
-print(p.applicants,p.position)
+            if int(d[1]) == 0:
+                nullers += 1
+        self.applicants = counter
+        self.nullers = nullers
