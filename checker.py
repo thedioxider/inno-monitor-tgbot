@@ -1,5 +1,6 @@
+import re
 import requests
-import lxml
+import lxml.html, lxml.etree
 
 
 class Checker:
@@ -26,7 +27,14 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
             return None
         return page
 
-    def __init__(self, innoid, program=0, noege=0):
+    def set_innoid(self, innoid):
+        if re.fullmatch(r'[0-9- ]+', innoid) is not None:
+            self.innoid = innoid
+            return True
+        else:
+            return False
+
+    def __init__(self, innoid='', program=0, noege=0):
         # uid: applicant's id or СНИЛС, as it appears in the table
         # program: 0 = dsai, 1 = bcse
         # noege: 0 for EGE results, 1 for БВИ, others for the rest quotas
