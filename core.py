@@ -6,6 +6,8 @@ class User:
     def __init__(self, uid):
         self.uid = uid
         self.checker = Checker()
+        self.bvi = Checker()
+        self.bvi.noege = 1
 
 
 ulist = {}
@@ -36,21 +38,31 @@ def start_bot(msg):
 "Hi! Here you can get actual info about your position in the list of Innopolis University applicants.\
 \n\nPlease, enter your applicant ID as it's displayed in the table (you can also find it in your personal account):")
     bot.register_next_step_handler(rep, register_step, u.id)
-    print(f'Registred {u.first_name} (@{u.username})[{u.id}]')
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def answer_query(call):
     cbdata = call.data.split(' ')
     if cbdata[0] == 'cb_program':
-        ulist[int(call.from_user.id)].program = int(cbdata[1])
+        u = call.from_user
+        ulist[int(u.id)].checker.program = int(cbdata[1])
+        ulist[int(u.id)].bvi.program = int(cbdata[1])
         bot.answer_callback_query(call.id)
         bot.send_message(call.message.chat.id, "Complete! Now you can check your position by entering /position")
+    print(f'Registred {u.first_name} (@{u.username})[{u.id}]')
 
 
 @bot.message_handler(commands=['position'])
 def get_position(msg):
-    pass
+    uc = ulist[msg.from_user.id].checker
+    ub = ulist[msg.from_user.id].bvi
+    uc.upd_pos()
+    ub.upd_pos()
+    bot.send_message(msg.chat.id,
+f"Your position now is:\n*{uc.position} of {uc.applicants-uc.nullers}*\n\
+_{ub.applicants}_ without entrance test (БВИ).\n\
+There are also {uc.nullers} people yet without EGE score in table ({uc.applicants} total).",
+parse_mode='markdown')
 
 
 print('\nOnline!')
