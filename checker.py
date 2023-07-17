@@ -73,7 +73,7 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
             d = row.xpath('./td/text()')
             if d[0] == self.innoid:
                 self.position = counter
-            if int(d[1]) == 0:
+            if d[1] == "0":
                 nullers += 1
         self.applicants = counter
         self.nullers = nullers
