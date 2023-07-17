@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 import requests
 import lxml.html, lxml.etree
 
@@ -13,7 +14,8 @@ class Checker:
         'direction': '3',
         'financing_source': 'budget',
         'educational-program': '',
-        'without_EGE': ''
+        'without_EGE': '',
+        'date': ''
     }
 
     @staticmethod
@@ -29,7 +31,7 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
 
     def set_innoid(self, innoid):
         if re.fullmatch(r'[0-9- ]+', innoid) is not None:
-            self.innoid = innoid
+            self.innoid = innoid.strip()
             return True
         else:
             return False
@@ -44,16 +46,16 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
         self.position = 0
         self.applicants = 0
         self.nullers = 0
-        self.upd_pos()
 
     def upd_pos(self):
         payload = Checker.PAYLOAD.copy()
         payload['educational-program'] = Checker.PROGRAMS[self.program]
         payload['without_EGE'] = self.noege
+        self.upd_date = datetime.today().strftime('%Y-%m-%d')
+        payload['date'] = self.upd_date
         page = Checker.get_page(Checker.URL, payload)
         if page is None:
             raise requests.RequestException("Couldn't access the page")
-        # self.upd_date =
 
         tree = lxml.html.fromstring(page.text)
         # this xpath may change in future, idk
@@ -71,7 +73,7 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
         for row in tdata.xpath('./tr'):
             counter += 1
             d = row.xpath('./td/text()')
-            if d[0] == self.innoid:
+            if d[0].strip() == self.innoid:
                 self.position = counter
             if d[1] == "0":
                 nullers += 1
