@@ -54,13 +54,15 @@ def answer_query(call):
 
 @bot.message_handler(commands=['position'])
 def get_position(msg):
+    if msg.from_user.id not in ulist.keys():
+        bot.send_message(msg.chat.id, "Seems like you're not registered yet. Maybe bot has been rebooted since your last visit. Please, use /start to register")
+        return
     uc = ulist[msg.from_user.id].checker
     ub = ulist[msg.from_user.id].bvi
     uc.upd_pos()
     ub.upd_pos()
     bot.send_message(msg.chat.id,
-f"Your position now is:\n*{uc.position} of {uc.applicants-uc.nullers}*\n\
-_{ub.applicants}_ without entrance test (БВИ).\n\
+f"Your position now is:\n*{uc.position+ub.applicants} of {uc.applicants-uc.nullers+ub.applicants}* (_{ub.applicants}_ are without entrance test -- _БВИ_).\n\
 There are also {uc.nullers} people yet without EGE score in table ({uc.applicants} total).",
 parse_mode='markdown')
 
