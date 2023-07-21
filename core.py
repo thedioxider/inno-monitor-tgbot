@@ -1,5 +1,27 @@
+import sys
+from datetime import datetime as dt
 import telebot
 from checker import Checker
+
+
+CREATE_LOGS = True
+if CREATE_LOGS:
+    log_file = 'bot.log'
+    log_output = None
+    try:
+        log_output = open(log_file, 'x').close()
+        log_output = open(log_file, 'a')
+    except FileExistsError:
+        log_output = open(log_file, 'a')
+        print('\n', file=log_output)
+    sys.stderr = open('bot.err', 'a')
+
+
+def log(entry):
+    print(f'{dt.today().strftime("[%Y-%m-%d %H:%M:%S]")} '+str(entry))
+    if CREATE_LOGS:
+        print(f'{dt.today().strftime("[%Y-%m-%d %H:%M:%S]")} '+str(entry), file=log_output)
+        log_output.flush()
 
 
 class User:
@@ -15,11 +37,15 @@ ulist = {}
 API_TOKEN = ''
 with open('TOKEN.txt') as f:
     API_TOKEN = f.readline()
-bot = telebot.TeleBot(API_TOKEN)
+bot = telebot.TeleBot(
+    API_TOKEN,
+    parse_mode='html'
+)
 
 
-def register_step(inpt, uid):
-    if ulist[uid].checker.set_innoid(inpt.text.strip()):
+def register_step(inpt, u):
+    if ulist[u.id].checker.set_innoid(inpt.text.strip()):
+        log(f'Registered {u.first_name} (@{u.username})[{u.id}]')
         cb_program = telebot.util.quick_markup({
             'DSAI': {'callback_data': f'cb_program 0'},
             'BCSE': {'callback_data': f'cb_program 1'}
@@ -27,7 +53,7 @@ def register_step(inpt, uid):
         bot.send_message(inpt.chat.id, "Please, choose your educational program:", reply_markup=cb_program)
     else:
         rep = bot.reply_to(inpt, "Wrong ID format. Please, enter it correctly:")
-        bot.register_next_step_handler(rep, register_step)
+        bot.register_next_step_handler(rep, register_step, u)
 
 
 @bot.message_handler(commands=['start'])
@@ -37,7 +63,7 @@ def start_bot(msg):
     rep = bot.send_message(msg.chat.id,
 "Hi! Here you can get actual info about your position in the list of Innopolis University applicants.\
 \n\nPlease, enter your applicant ID as it's displayed in the table (you can also find it in your personal account):")
-    bot.register_next_step_handler(rep, register_step, u.id)
+    bot.register_next_step_handler(rep, register_step, u)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -54,7 +80,6 @@ Please, register again: /start")
         ulist[u.id].bvi.program = int(cbdata[1])
         bot.answer_callback_query(call.id)
         bot.send_message(call.message.chat.id, "Complete! Now you can check your position by entering /position")
-        print(f'Registered {u.first_name} (@{u.username})[{u.id}]')
 
 
 @bot.message_handler(commands=['position'])
@@ -72,15 +97,13 @@ Please, use /start to register")
         bot.send_message(msg.chat.id,
 f"Could't find find your position. Seems like you're not in the list.\n\
 Please, try entering your data again with /start.\n\
-There are _{uc.applicants+ub.applicants}_ in the table: {ub.applicants} with БВИ, {uc.nullers} without EGE score",
-parse_mode='markdown')
+There are <i>{uc.applicants+ub.applicants}</i> in the table: {ub.applicants} with БВИ, {uc.nullers} without EGE score")
         return
     bot.send_message(msg.chat.id,
 f"Your position now is:\n\
-*{uc.position+ub.applicants} of {uc.applicants-uc.nullers+ub.applicants}* (__including__ {ub.applicants} with _БВИ_).\n\n\
-There are also {uc.nullers} people yet with 0 EGE score in table ({uc.applicants+ub.applicants} total applicants)",
-parse_mode='markdown')
+<b>{uc.position+ub.applicants} of {uc.applicants-uc.nullers+ub.applicants}</b> (<u>including</u> {ub.applicants} with <i>БВИ</i>).\n\n\
+There are also {uc.nullers} people yet with 0 EGE score in table ({uc.applicants+ub.applicants} total applicants)")
 
 
-print('\nOnline!')
+log('Online!\n')
 bot.infinity_polling()
