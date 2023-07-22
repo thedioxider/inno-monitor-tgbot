@@ -44,13 +44,17 @@ bot = telebot.TeleBot(
 )
 
 
-def register_innoid_step(inpt, u):
+def register_innoid_step(inpt, u, tries=0):
     if ulist[u.id].checker.set_innoid(inpt.text.strip()):
         log(f'Registered {u.first_name} (@{u.username})[{u.id}]')
         register_program_step(u, inpt.chat)
+    elif inpt.text[0] == '/':
+        bot.clear_step_handler_by_chat_id(inpt.chat.id)
+    elif tries < 2:
+        rep = bot.reply_to(inpt, "Wrong ID format. Please, enter it correctly or /cancel:")
+        bot.register_next_step_handler(rep, register_innoid_step, u, tries+1)
     else:
-        rep = bot.reply_to(inpt, "Wrong ID format. Please, enter it correctly:")
-        bot.register_next_step_handler(rep, register_innoid_step, u)
+        rep = bot.reply_to(inpt, "Wrong ID format")
 
 
 def register_program_step(u, chat):
@@ -73,24 +77,14 @@ def start_bot(msg):
     bot.register_next_step_handler(rep, register_innoid_step, u)
 
 
-@bot.callback_query_handler(func=lambda call: True)
-def answer_query(call):
-    cbdata = call.data.split(' ')
-    u = call.from_user
-    if cbdata[0] in ['program','refresh']:
-        if u.id not in ulist.keys():
-            bot.send_message(call.message.chat.id,
-"This session is outdated.\n\
-Please, register again: /start")
-            return
-        ulist[u.id].checker.program = int(cbdata[1])
-        ulist[u.id].bvi.program = int(cbdata[1])
-        if cbdata[0] == 'program':
-            bot.answer_callback_query(call.id, "Complete registration!")
-            get_position(call.message, u)
-        elif cbdata[0] == 'refresh':
-            bot.delete_message(call.message.chat.id, call.message.id)
-            get_position(call.message, u)
+@bot.message_handler(commands=['help'])
+def help_info(msg):
+    bot.send_message(msg.chat.id,
+"This bot is made\n\
+by @theDioxider [ <a href='https://github.com/thedioxider/inno-monitor-tgbot/'>GitHub</a> ]\n\
+All information is taken from the <a href='https://innopolis.university/sveden/apply/rating-of-applicants?type=enrolled'>Innopolis Ratings of applicants</a>\n\n\
+\U0001f90d Wish you luck with entering the University",
+disable_web_page_preview=True)
 
 
 @bot.message_handler(commands=['position'])
@@ -124,12 +118,38 @@ Your position (<u>including</u> applicants with БВИ) is in range:\n\
 <b><i>{uc.hpos+ub.applicants}-{uc.lpos+ub.applicants} of {uc.applicants+ub.applicants}</i></b>\n"
     report += f"\n<i>{ub.applicants} are with БВИ, {uc.nullers} are with 0 EGE score\n\
 ({uc.applicants+ub.applicants} in total)</i>\n\
-You can update your position with /position or by pressing <i>Refresh</i>"
+<a href='{uc.turl}'>Check online table</a>\n\
+Refresh with /position or using the button below"
     cb_refresh = telebot.util.quick_markup({
         'Refresh': { 'callback_data': f'refresh {uc.program}' }
     })
     bot.delete_message(loadmsg.chat.id, loadmsg.id)
-    bot.send_message(msg.chat.id, report, reply_markup=cb_refresh)
+    bot.send_message(
+        msg.chat.id,
+        report,
+        reply_markup=cb_refresh,
+        disable_web_page_preview=True
+    )
+
+
+@bot.callback_query_handler(func=lambda call: True)
+def answer_query(call):
+    cbdata = call.data.split(' ')
+    u = call.from_user
+    if cbdata[0] in ['program','refresh']:
+        if u.id not in ulist.keys():
+            bot.send_message(call.message.chat.id,
+"This session is outdated.\n\
+Please, register again: /start")
+            return
+        ulist[u.id].checker.program = int(cbdata[1])
+        ulist[u.id].bvi.program = int(cbdata[1])
+        if cbdata[0] == 'program':
+            bot.answer_callback_query(call.id, "Complete registration!")
+            get_position(call.message, u)
+        elif cbdata[0] == 'refresh':
+            bot.delete_message(call.message.chat.id, call.message.id)
+            get_position(call.message, u)
 
 
 log('Online!')
