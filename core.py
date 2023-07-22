@@ -120,11 +120,12 @@ Your position (<u>including</u> applicants with БВИ) is in range:\n\
 <b><i>{uc.hpos+ub.applicants}-{uc.lpos+ub.applicants} of {uc.applicants+ub.applicants}</i></b>\n"
     report += f"\n<i>{ub.applicants} are with БВИ, {uc.nullers} are with 0 EGE score\n\
 ({uc.applicants+ub.applicants} in total)</i>\n\
-<a href='{uc.turl}'>Check online table</a>\n\
 Refresh with /position or using the button below"
-    cb_refresh = telebot.util.quick_markup({
-        'Refresh': { 'callback_data': f'refresh {uc.program}' }
-    })
+    markup = {}
+    if uc.program != -1:
+        markup['Online Table'] = { 'url': f'{uc.turl}' }
+    markup['Refresh'] = { 'callback_data': f'refresh {uc.program}' }
+    cb_refresh = telebot.util.quick_markup(markup)
     bot.delete_message(loadmsg.chat.id, loadmsg.id)
     bot.send_message(
         msg.chat.id,
