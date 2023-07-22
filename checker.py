@@ -43,7 +43,8 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
         self.innoid = innoid
         self.program = program
         self.noege = noege
-        self.score = -1
+        self.turl = ''  # table url
+        self.score = -1  # EGE score
         self.hpos = 0  # highest position
         self.lpos = 0  # lowest position
         self.applicants = 0
@@ -63,6 +64,7 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
         page = Checker.get_page(Checker.URL, payload)
         if page is None:
             raise requests.RequestException("Couldn't access the page")
+        self.turl = page.url
         tree = lxml.html.fromstring(page.text)
         ### this xpath may change in future, idk
         tdata = tree.xpath('//section[@class="block-thirteen"]\
