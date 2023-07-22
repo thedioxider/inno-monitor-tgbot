@@ -36,7 +36,7 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
         else:
             return False
 
-    def __init__(self, innoid='', program=0, noege=0):
+    def __init__(self, innoid='', program=-1, noege=0):
         # uid: applicant's id or СНИЛС, as it appears in the table
         # program: 0 = dsai, 1 = bcse
         # noege: 0 for EGE results, 1 for БВИ, others for the rest quotas
@@ -50,14 +50,10 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
         self.applicants = 0
         self.nullers = 0
 
-    def upd_pos(self):
-        self.score = -1
-        self.hpos = 0
-        self.lpos = 0
-        self.applicants = 0
-        self.nullers = 0
+    def get_score_table(self, program=None):
+        if program == None: program = self.program
         payload = Checker.PAYLOAD.copy()
-        payload['educational-program'] = Checker.PROGRAMS[self.program].lower()
+        payload['educational-program'] = Checker.PROGRAMS[program].lower()
         payload['without_EGE'] = self.noege
         upd_date = dt.today().strftime('%Y-%m-%d')
         payload['date'] = upd_date
@@ -72,30 +68,47 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
         if len(tdata) == 0:
             raise lxml.etree.ParseError("Couldn't access the data table")
         tdata = tdata[0]
-        # self.applicants = 0
-        # fdata = tdata.xpath('./tfoot/tr/td/b/text()')
-        # if len(fdata) == 1:
-        #     self.applicants = int(fdata[0])
-        if self.noege == 0:
-            eget = []
-            for row in tdata.xpath('./tr'):
-                d = row.xpath('./td/text()')
+        eget = {}
+        for row in tdata.xpath('./tr'):
+            d = row.xpath('./td/text()')
+            if self.noege == 0:
                 egescore = int(d[4])+int(d[5])+ \
-                           max(int(d[3]),int(d[6]))+int(d[7])
+                    max(int(d[3]),int(d[6]))+int(d[7])
                 if d[0] == self.innoid: self.score = egescore
-                eget.append([d[0], egescore])
-            eget = sorted(eget, key=lambda x: x[1], reverse=True)
-            self.applicants = len(eget)
+                eget[d[0]] = egescore
+            else:
+                eget[d[0]] = -1
+        return eget
+
+    def get_cross_table(self):
+        tcross = {}
+        for p in range(len(Checker.PROGRAMS)):
+            eget = self.get_score_table(program=p)
+            tcross.update(eget)
+        return tcross
+    
+    def upd_pos(self):
+        self.score = -1
+        self.hpos = 0
+        self.lpos = 0
+        self.applicants = 0
+        self.nullers = 0
+        eget = self.get_cross_table() \
+            if self.program == -1 \
+            else self.get_score_table()
+        self.applicants = len(eget)
+        if self.noege == 0:
             self.nullers = 0
-            for i, r in enumerate(eget):
+            for i, r in enumerate(sorted(
+                eget.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )):
                 if r[1] == self.score:
-                    if self.hpos == 0: self.hpos = i + 1
+                    if self.hpos == 0:
+                        self.hpos = i + 1
                     self.lpos = i + 1
                 if self.is_nuller(score=r[1]): self.nullers += 1
-        else:
-            self.applicants = 0
-            for row in tdata.xpath('./tr'):
-                self.applicants += 1
 
     def is_nuller(self, score=None):
         if score is None: score = self.score
