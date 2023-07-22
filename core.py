@@ -4,7 +4,7 @@ import telebot
 from checker import Checker
 
 
-CREATE_LOGS = True
+CREATE_LOGS = False
 if CREATE_LOGS:
     log_file = 'bot.log'
     log_output = None
@@ -14,7 +14,7 @@ if CREATE_LOGS:
     except FileExistsError:
         log_output = open(log_file, 'a')
         print('\n', file=log_output)
-    sys.stderr = open('bot.err', 'a')
+    # sys.stderr = open('bot.err', 'a')
 
 
 def log(entry):
@@ -37,7 +37,7 @@ ulist = {}
 
 API_TOKEN = ''
 with open('TOKEN.txt') as f:
-    API_TOKEN = f.readline()
+    API_TOKEN = f.readline().strip()
 bot = telebot.TeleBot(
     API_TOKEN,
     parse_mode='html'
@@ -46,7 +46,7 @@ bot = telebot.TeleBot(
 
 def register_innoid_step(inpt, u, tries=0):
     if ulist[u.id].checker.set_innoid(inpt.text.strip()):
-        log(f'Registered {u.first_name} (@{u.username})[{u.id}]')
+        log(f'Registered {u.first_name} (@{u.username})<{u.id}>')
         register_program_step(u, inpt.chat)
     elif inpt.text[0] == '/':
         bot.clear_step_handler_by_chat_id(inpt.chat.id)
@@ -60,8 +60,9 @@ def register_innoid_step(inpt, u, tries=0):
 def register_program_step(u, chat):
     cb_program = telebot.util.quick_markup({
         'DSAI': { 'callback_data': 'program 0' },
-        'BCSE': { 'callback_data': 'program 1' }
-    })
+        'BCSE': { 'callback_data': 'program 1' },
+        'Cross Table': { 'callback_data': 'program -1' }
+    }, row_width = 2)
     bot.send_message(chat.id, "Please, choose your educational program:",
                      reply_markup=cb_program)
 
@@ -100,7 +101,8 @@ Please, use /start to register")
     ub = ulist[u.id].bvi
     uc.upd_pos()
     ub.upd_pos()
-    report = f"<u><i>{dt.today().strftime('%d %B')} [{Checker.PROGRAMS[uc.program]}]:</i></u>\n"
+    report = f"<u><i>{dt.today().strftime('%d %B')} \
+[{'Cross' if uc.program == -1 else Checker.PROGRAMS[uc.program]}]:</i></u>\n"
     if uc.hpos == 0 or uc.lpos == 0:
         report += "Seems like you are not in the list yet. Maybe you have entered wrong ID. \
 You can try entering <i>СНИЛС</i> instead of <i>applicant ID</i>, or vice versa. \
