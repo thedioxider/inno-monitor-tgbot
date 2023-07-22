@@ -55,8 +55,8 @@ def register_innoid_step(inpt, u):
 
 def register_program_step(u, chat):
     cb_program = telebot.util.quick_markup({
-        'DSAI': { 'callback_data': f'cb_program 0' },
-        'BCSE': { 'callback_data': f'cb_program 1' }
+        'DSAI': { 'callback_data': 'program 0' },
+        'BCSE': { 'callback_data': 'program 1' }
     })
     bot.send_message(chat.id, "Please, choose your educational program:",
                      reply_markup=cb_program)
@@ -76,8 +76,8 @@ def start_bot(msg):
 @bot.callback_query_handler(func=lambda call: True)
 def answer_query(call):
     cbdata = call.data.split(' ')
-    if cbdata[0] == 'cb_program':
-        u = call.from_user
+    u = call.from_user
+    if cbdata[0] in ['program','refresh']:
         if u.id not in ulist.keys():
             bot.send_message(call.message.chat.id,
 "This session is outdated.\n\
@@ -85,8 +85,12 @@ Please, register again: /start")
             return
         ulist[u.id].checker.program = int(cbdata[1])
         ulist[u.id].bvi.program = int(cbdata[1])
-        bot.answer_callback_query(call.id, "Complete registration!")
-        get_position(call.message, call.from_user)
+        if cbdata[0] == 'program':
+            bot.answer_callback_query(call.id, "Complete registration!")
+            get_position(call.message, u)
+        elif cbdata[0] == 'refresh':
+            bot.delete_message(call.message.chat.id, call.message.id)
+            get_position(call.message, u)
 
 
 @bot.message_handler(commands=['position'])
@@ -120,9 +124,12 @@ Your position (<u>including</u> applicants with БВИ) is in range:\n\
 <b><i>{uc.hpos+ub.applicants}-{uc.lpos+ub.applicants} of {uc.applicants+ub.applicants}</i></b>\n"
     report += f"\n<i>{ub.applicants} are with БВИ, {uc.nullers} are with 0 EGE score\n\
 ({uc.applicants+ub.applicants} in total)</i>\n\
-You can update your position with /position"
+You can update your position with /position or by pressing <i>Refresh</i>"
+    cb_refresh = telebot.util.quick_markup({
+        'Refresh': { 'callback_data': f'refresh {uc.program}' }
+    })
     bot.delete_message(loadmsg.chat.id, loadmsg.id)
-    bot.send_message(msg.chat.id, report)
+    bot.send_message(msg.chat.id, report, reply_markup=cb_refresh)
 
 
 log('Online!')
