@@ -116,9 +116,9 @@ Position is unavailable. Please, check it later\n"
 <b><i>{uc.lpos+ub.applicants} of {uc.applicants+ub.applicants}</i></b>\n"
     else:
         report += f"There are several applicants with the same EGE score as you. \
-Your position (<u>including</u> applicants with БВИ) is in range:\n\
-<b><i>{uc.hpos+ub.applicants}-{uc.lpos+ub.applicants} of {uc.applicants+ub.applicants}</i></b>\n"
-    report += f"\n<i>{ub.applicants} are with БВИ, {uc.nullers} are with 0 EGE score\n\
+Your position (<u>including</u> applicants with БВИ, who <i><u>have already brought the originals</u></i>) is in range:\n\
+<b><i>{uc.hpos+ub.origs}-{uc.lpos+ub.origs} of {uc.applicants+ub.origs}</i></b>\n"
+    report += f"\n<i>{ub.applicants} are with БВИ ({ub.origs} brought originals), {uc.nullers} are with 0 EGE score\n\
 ({uc.applicants+ub.applicants} in total)</i>\n\
 Refresh with /position or using the button below"
     markup = {}
