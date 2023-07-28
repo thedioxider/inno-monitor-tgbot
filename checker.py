@@ -48,6 +48,7 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
         self.hpos = 0  # highest position
         self.lpos = 0  # lowest position
         self.applicants = 0
+        self.origs = 0
         self.nullers = 0
 
     def get_score_table(self, program=None):
@@ -71,13 +72,14 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
         eget = {}
         for row in tdata.xpath('./tr'):
             d = row.xpath('./td/text()')
+            orig = d[-1].strip() == "Оригинал"
             if self.noege == 0:
-                egescore = int(d[4])+int(d[5])+ \
-                    max(int(d[3]),int(d[6]))+int(d[7])
-                if d[0] == self.innoid: self.score = egescore
-                eget[d[0]] = egescore
+                egescore = int(d[5])+int(d[6])+ \
+                    max(int(d[4]),int(d[7]))+int(d[8])
+                if d[1] == self.innoid: self.score = egescore
+                eget[d[1]] = [egescore, orig]
             else:
-                eget[d[0]] = -1
+                eget[d[1]] = [-1, orig]
         return eget
 
     def get_cross_table(self):
@@ -92,23 +94,26 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
         self.hpos = 0
         self.lpos = 0
         self.applicants = 0
+        self.origs = 0
         self.nullers = 0
         eget = self.get_cross_table() \
             if self.program == -1 \
             else self.get_score_table()
         self.applicants = len(eget)
+        for i in eget.values():
+            self.origs += i[1]
         if self.noege == 0:
             self.nullers = 0
             for i, r in enumerate(sorted(
                 eget.items(),
-                key=lambda x: x[1],
+                key=lambda x: x[1][0],
                 reverse=True
             )):
-                if r[1] == self.score:
+                if r[1][0] == self.score:
                     if self.hpos == 0:
                         self.hpos = i + 1
                     self.lpos = i + 1
-                if self.is_nuller(score=r[1]): self.nullers += 1
+                if self.is_nuller(score=r[1][0]): self.nullers += 1
 
     def is_nuller(self, score=None):
         if score is None: score = self.score
