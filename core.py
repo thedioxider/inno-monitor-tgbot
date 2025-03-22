@@ -3,8 +3,6 @@ from datetime import datetime as dt
 import telebot
 from checker import Checker
 
-# that's important
-
 CREATE_LOGS = False
 if CREATE_LOGS:
     log_file = 'bot.log'
