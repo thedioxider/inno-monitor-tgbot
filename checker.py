@@ -3,6 +3,8 @@ from datetime import datetime as dt
 import requests
 import lxml.html, lxml.etree
 
+# TODO: stop experimenting with GitHub in public repositories
+
 class Checker:
     PROGRAMS = [ 'DSAI', 'BCSE' ]
     URL = 'https://innopolis.university/sveden/apply/rating-of-applicants'
