@@ -3,8 +3,6 @@ from datetime import datetime as dt
 import requests
 import lxml.html, lxml.etree
 
-# Necessary change
-
 class Checker:
     PROGRAMS = [ 'DSAI', 'BCSE' ]
     URL = 'https://innopolis.university/sveden/apply/rating-of-applicants'
